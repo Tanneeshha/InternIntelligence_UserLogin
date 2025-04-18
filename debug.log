@@ -1,0 +1,15 @@
+Array
+(
+    [username] => taneesha
+    [password] => 12345678
+)
+Username: taneesha
+Password: 12345678
+Fetched User: Array
+(
+    [id] => 1
+    [username] => taneesha
+    [email] => taneesha@example.com
+    [pass] => $2y$10$WvjGowGmr99d57ZtMg.AUeEK6i5eHhknkIYbOEUVHgD6Em9iK6jVC
+)
+

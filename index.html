@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Secure Login System</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <div class="card" id="loginCard">
+            <div class="card-header">
+                <h2>Secure Login</h2>
+            </div>
+            <div class="card-body">
+                <div class="alert alert-danger" id="errorAlert" style="display: none;"></div>
+                <div class="alert alert-success" id="successAlert" style="display: none;"></div>
+
+                <!-- Login Form -->
+                <form class="login-form" id="loginForm">
+                    <div class="form-group">
+                        <label for="username">Username or Email</label>
+                        <input type="text" id="username" name="username" placeholder="Enter your username or email" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="password">Password</label>
+                        <input type="password" id="password" name="password" placeholder="Enter your password" required>
+                    </div>
+                    <button type="submit" class="btn" id="loginButton">
+                        <span class="spinner" id="loginSpinner" style="display: none;">⏳</span>Log In
+                    </button>
+                </form>
+                
+                <!-- Welcome Message (shown after login) -->
+                <div class="welcome-message" id="welcomeMessage">
+                    <h3>Welcome, <span id="userDisplayName">User</span>!</h3>
+                    <p>You have successfully logged in.</p>
+                    <button class="btn btn-logout" id="logoutButton">
+                        <span class="spinner" id="logoutSpinner"></span>
+                        Log Out
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+    // API endpoints
+    const API = {
+        login: 'login.php', 
+        logout: 'logout.php' 
+    };
+
+    // DOM Elements
+    const loginForm = document.getElementById('loginForm');
+    const welcomeMessage = document.getElementById('welcomeMessage');
+    const errorAlert = document.getElementById('errorAlert');
+    const successAlert = document.getElementById('successAlert');
+    const userDisplayName = document.getElementById('userDisplayName');
+    const loginButton = document.getElementById('loginButton');
+    const logoutButton = document.getElementById('logoutButton');
+    const loginSpinner = document.getElementById('loginSpinner');
+    const logoutSpinner = document.getElementById('logoutSpinner');
+    
+    // If user is already logged in (from localStorage or cookies)
+    checkAuthStatus();
+
+    // Login Form Submission
+    loginForm.addEventListener('submit', async function(e) {
+        e.preventDefault();
+        
+        setLoading(true, loginButton, loginSpinner);
+        
+        hideAlerts();
+        
+        const username = document.getElementById('username').value.trim();
+        const password = document.getElementById('password').value;
+        
+        // client-side validation
+        if (!username || !password) {
+            showError('Please enter both username and password');
+            setLoading(false, loginButton, loginSpinner);
+            return;
+        }
+        
+        try {
+            // Calling the API endpoint to login
+            const formData = new FormData();
+            formData.append('username', username);
+            formData.append('password', password);
+
+            const response = await fetch(API.login, {
+            method: 'POST',
+            body: formData,
+            credentials: 'include'
+});
+            const data = await response.json();
+            
+            if (!response.ok) {
+                throw new Error(data.message || 'Login failed');
+            }
+            
+            // successful login
+            handleLoginSuccess(data);
+            
+        } catch (error) {
+            showError(error.message || 'Failed to connect to the server');
+        } finally {
+            setLoading(false, loginButton, loginSpinner);
+        }
+    });
+    
+    // Logout Button Handler
+    logoutButton.addEventListener('click', async function() {
+        setLoading(true, logoutButton, logoutSpinner);
+        hideAlerts();
+        
+        try {
+            const response = await fetch(API.logout, {
+                method: 'POST',
+                credentials: 'include' // Including cookies in the request
+            });
+            
+            const data = await response.json();
+            
+            if (!response.ok) {
+                throw new Error(data.message || 'Logout failed');
+            }
+            
+            // successful logout
+            handleLogoutSuccess();
+            
+        } catch (error) {
+            showError(error.message || 'Failed to connect to the server');
+        } finally {
+            setLoading(false, logoutButton, logoutSpinner);
+        }
+    });
+    
+    function handleLogoutSuccess() {
+    localStorage.removeItem('username');
+    localStorage.removeItem('authToken');
+    showLoginForm();
+    showSuccess('You have been logged out.');
+}
+
+
+    // Helper Functions
+    
+    function checkAuthStatus() {
+    const username = localStorage.getItem('username');
+    
+    if (username) {
+        showWelcomeScreen(username);
+    } else {
+        showLoginForm();
+    }
+
+}   
+    function handleLoginSuccess(data) {
+    const username = data.username || 'User';
+    localStorage.setItem('username', username);
+    showWelcomeScreen(username);
+    showSuccess('Login successful!');
+    if (data.token) {
+    localStorage.setItem('authToken', data.token);
+}
+
+}
+    
+    function showWelcomeScreen(username) {
+        loginForm.style.display = 'none';
+        welcomeMessage.style.display = 'block';
+        userDisplayName.textContent = username;
+    }
+    
+    function showLoginForm() {
+        welcomeMessage.style.display = 'none';
+        loginForm.style.display = 'block';
+        document.getElementById('username').value = '';
+        document.getElementById('password').value = '';
+    }
+    
+    function showError(message) {
+        errorAlert.textContent = message;
+        errorAlert.style.display = 'block';
+        successAlert.style.display = 'none';
+    }
+    
+    function showSuccess(message) {
+        successAlert.textContent = message;
+        successAlert.style.display = 'block';
+        errorAlert.style.display = 'none';
+    }
+    
+    function hideAlerts() {
+        errorAlert.style.display = 'none';
+        successAlert.style.display = 'none';
+    }
+    
+    function setLoading(isLoading, button, spinner) {
+        if (isLoading) {
+            button.disabled = true;
+            spinner.style.display = 'inline-block';
+        } else {
+            button.disabled = false;
+            spinner.style.display = 'none';
+        }
+    }
+});
+    </script>
+</body>
+</html>
